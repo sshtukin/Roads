@@ -10,43 +10,26 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
 
 public class StubGpsNavigator implements GpsNavigator {
-    private Set<String> vertexesSet = new HashSet<>();
-    private Map<Edge, Integer> matrix = new HashMap<>();
-    private Map<Edge, Boolean> isMoreThanOnePath = new HashMap<>();
-    private static final int MAX_VALUE = Integer.MAX_VALUE / 2 - 1;
-    private List<String> vertexesList;
-    private int[][] next;
-    private int numberOfVertexes;
-
-    private void inputValidation(String[] path){
-        if (path.length != 4) throw new WrongFileFormatException();
-        try {
-            Integer.valueOf(path[2]);
-            Integer.valueOf(path[3]);
-        }catch (NumberFormatException e){
-            throw new WrongFileFormatException();
-        }
-    }
+    private AdjacencyMatrix adjacencyMatrix;
 
     @Override
     public void readData(String filePath) {
+        adjacencyMatrix = new AdjacencyMatrix<>(Edge -> Edge.getCost() + Edge.getLength());
+
         File file = new File(filePath);
         FileReader fr = null;
         BufferedReader br = null;
-        String parts[];
+        String[] parts;
         try {
             fr = new FileReader(file);
             br = new BufferedReader(fr);
             String line;
             while ((line = br.readLine()) != null) {
                 parts = line.split(" ");
-                inputValidation(parts);
-                matrix.put(new Edge(parts[0], parts[1]), Integer.valueOf(parts[2]) * Integer.valueOf(parts[3]));
-                vertexesSet.add(parts[0]);
-                vertexesSet.add(parts[1]);
+                Utils.inputValidation(parts);
+                adjacencyMatrix.put(new Edge(parts[0], parts[1], Integer.valueOf(parts[2]), Integer.valueOf(parts[3])));
             }
         } catch (WrongFileFormatException | IOException e ) {
             System.out.println(e.getMessage());
@@ -61,80 +44,27 @@ public class StubGpsNavigator implements GpsNavigator {
                 e.printStackTrace();
             }
         }
-        initMatrix();
     }
 
     @Override
     public Path findPath(String pointA, String pointB) {
+        FloydWarshall<Edge> floydWarshall = new FloydWarshall<>(Edge.class, adjacencyMatrix);
         try {
-            if ((!vertexesSet.contains(pointA)) || (!vertexesSet.contains(pointB))){
+            adjacencyMatrix = floydWarshall.calculateWays();
+            if ((!adjacencyMatrix.getVertexesList().contains(pointA)) || (!adjacencyMatrix.getVertexesList().contains(pointB))){
                 throw new ThereIsNoPathException();
             }
-            if (matrix.get(new Edge(pointA, pointB)).equals(MAX_VALUE)) {
+            if (adjacencyMatrix.getPrice(new Edge(pointA, pointB, 0,0)) == (AdjacencyMatrix.MAX_VALUE)) {
                 throw new ThereIsNoPathException();
             }
-            if (isMoreThanOnePath.get(new Edge(pointA, pointB)) != null) {
+            if (adjacencyMatrix.isMoreThanOnePath(new Edge(pointA, pointB, 0, 0)) == true) {
                 throw new MoreThanOnePathException();
             }
-
-            List<String> path = new ArrayList<>();
-            int a = vertexesList.indexOf(pointA);
-            int b = vertexesList.indexOf(pointB);
-            while (a != b) {
-                path.add(vertexesList.get(a));
-                a = next[a][b];
-            }
-            path.add(pointB);
-            return new Path(path, matrix.get(new Edge(pointA, pointB)));
+            return floydWarshall.getPath(pointA, pointB);
         }
-        catch (ThereIsNoPathException | MoreThanOnePathException e){
-            System.out.println(e.getMessage());
+        catch (ThereIsNoPathException  | MoreThanOnePathException | InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
         }
         return null;
-    }
-
-
-    private void initMatrix(){
-        Edge currentEdge, edge1, edge2;
-        vertexesList = new ArrayList<>(vertexesSet);
-        numberOfVertexes = vertexesSet.size();
-        next = new int[numberOfVertexes][numberOfVertexes];
-
-        //matrix init
-        for (int i = 0; i < next.length; i++) {
-            for (int j = 0; j < next.length; j++) {
-                if (i != j) {
-                    next[i][j] = j;
-                }
-            }
-        }
-        for (int i = 0; i < numberOfVertexes; ++i)
-            for (int j = 0; j< numberOfVertexes; ++j){
-                currentEdge = new Edge(vertexesList.get(i), vertexesList.get(j));
-                if (i == j){
-                    matrix.put(currentEdge, 0);
-                    continue;
-                }
-                matrix.putIfAbsent(currentEdge, MAX_VALUE);
-            }
-
-        //Floyd-Warshall
-        for (int k = 0; k < numberOfVertexes; ++k) {
-            for (int i = 0; i < numberOfVertexes; ++i) {
-                for (int j = 0; j < numberOfVertexes; ++j) {
-                    currentEdge = new Edge(vertexesList.get(i), vertexesList.get(j));
-                    edge1 = new Edge(vertexesList.get(i), vertexesList.get(k));
-                    edge2 = new Edge(vertexesList.get(k), vertexesList.get(j));
-                    if ((matrix.get(edge1) + matrix.get(edge2)) == matrix.get(currentEdge) && (k != j) && (k != i)) {
-                        isMoreThanOnePath.put(currentEdge, true);
-                    }
-                    else if (matrix.get(edge1) + matrix.get(edge2) < matrix.get(currentEdge)) {
-                        matrix.put(currentEdge, matrix.get(edge1) + matrix.get(edge2));
-                        next[i][j] = next[i][k];
-                        isMoreThanOnePath.put(currentEdge, null);
-                    }
-                }
-            }
-        }
     }
 }

@@ -9,7 +9,7 @@ public class Main {
         final GpsNavigator navigator = new StubGpsNavigator();
         navigator.readData("D:\\Gps\\road_map.ext");
 
-        final Path path = navigator.findPath("A", "B");
+        final Path path = navigator.findPath("A", "C");
         System.out.println(path);
     }
 }
