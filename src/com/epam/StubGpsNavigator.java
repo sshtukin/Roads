@@ -16,7 +16,7 @@ public class StubGpsNavigator implements GpsNavigator {
 
     @Override
     public void readData(String filePath) {
-        adjacencyMatrix = new AdjacencyMatrix<>(Edge -> Edge.getCost() + Edge.getLength());
+        adjacencyMatrix = new AdjacencyMatrix<Edge>(Edge -> Edge.getCost() + Edge.getLength());
 
         File file = new File(filePath);
         FileReader fr = null;

@@ -12,14 +12,6 @@ public abstract class Nodable {
 
     public abstract void setV2(String v2);
 
-    public abstract int getCost();
-
-    public abstract void setCost(int cost);
-
-    public abstract int getLength();
-
-    public abstract void setLength(int length);
-
     @Override
     public boolean equals(Object obj){
         if (obj == null) return false;

@@ -34,22 +34,18 @@ public class Edge extends Nodable {
         this.v2 = v2;
     }
 
-    @Override
     public int getCost() {
         return this.cost;
     }
 
-    @Override
     public void setCost(int cost) {
         this.cost = cost;
     }
 
-    @Override
     public int getLength() {
         return this.length;
     }
 
-    @Override
     public void setLength(int length) {
         this.length = length;
     }
